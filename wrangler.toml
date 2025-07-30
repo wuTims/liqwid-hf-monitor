@@ -1,0 +1,39 @@
+# Worker configuration
+name = "health-factor-monitor"
+main = "dist/index.js"
+compatibility_date = "2023-12-01"
+format = "modules"
+
+# Node.js compatibility
+compatibility_flags = ["nodejs_compat"]
+
+[observability.logs]
+enabled = true
+
+# Trigger the worker every 5 minutes
+[triggers]
+crons = ["*/2 * * * *"]
+
+# Build configuration
+[build]
+command = "pnpm run build"
+watch_dir = "src"
+
+# Environment variables
+[vars]
+# These are placeholder values - real values should be set in the Cloudflare Dashboard
+LIQWID_GRAPHQL_URL = "https://v2.api.liqwid.finance/graphql"
+HF_WARN = "1.7"
+HF_CRIT = "1.5"
+PAYMENT_ADDRESS = "cf9ae333b77108aa162b8ad736789988931a0b5a79d57f8b6f816fb8" # Set to the Cardano address you want to monitor
+NOTION_PRICES_DB_ID = "2358ac6b85e480049b3bd84d368c2d5e" # Notion database ID for price updates
+
+# Secrets (TELEGRAM_TOKEN, CHATID) should be set via wrangler secret commands:
+# wrangler secret put TELEGRAM_TOKEN
+# wrangler secret put CHATID
+
+# KV namespace for storing monitor state
+[[kv_namespaces]]
+id = "d7f12ea05d2f44408cd3a756e814651b"
+preview_id = "67804198e23346beaeba2b2517ec1329"
+binding = "HF_MONITOR_STATE"
