@@ -82,15 +82,15 @@ pnpm deploy
 Or use wrangler directly:
 
 ```bash
-wrangler deploy
+npx wrangler deploy
 ```
 
 Make sure to set up your secrets in Cloudflare:
 
 ```bash
-wrangler secret put TELEGRAM_TOKEN
-wrangler secret put CHATID
-wrangler secret put NOTION_API_TOKEN
+npx wrangler secret put TELEGRAM_TOKEN
+npx wrangler secret put CHATID
+npx wrangler secret put NOTION_API_TOKEN
 ```
 
 ## Testing
