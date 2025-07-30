@@ -7,20 +7,15 @@
 
 // Import local functionality
 import { 
-  LiqwidGraphQLService, 
-  createLiqwidClient, 
-  LiqwidClient,
+  createLiqwidClient,
   LiqwidPriceProvider,
-  PriceProvider,
   createNotionAdapter,
-  NotionAdapter,
-  sendAlert, 
-  AlertLevel,
+  sendAlert,
   AppConfig
 } from './lib/index.js';
 
 // Import worker-specific utilities
-import { createEnv, type WorkerEnv } from './config.js';
+import { createEnv } from './config.js';
 import { rootLogger } from './logger.js';
 
 /**
@@ -105,6 +100,14 @@ export default {
           alertsSent.push({ assetSymbol, id: loan.id, hf: healthFactor, level: 'warning' });
         }
       }
+
+      // Log summary
+      logger.info('Health Factor Monitor completed', {
+        hf_results,
+        checked: loansSnapshot.length,
+        alertsSent: alertsSent.length,
+        alerts: alertsSent
+      });
       
       // Step 3: Update Notion database with price information if configured
       if (validatedEnv.NOTION_PRICES_DB_ID) {
@@ -176,14 +179,6 @@ export default {
       } else {
         logger.info('Skipping Notion update - NOTION_PRICES_DB_ID not configured');
       }
-      
-      // Log summary
-      logger.info('Health Factor Monitor completed', {
-        hf_results,
-        checked: loansSnapshot.length,
-        alertsSent: alertsSent.length,
-        alerts: alertsSent
-      });
       
     } catch (error) {
       logger.error('Health Factor Monitor failed', { 
