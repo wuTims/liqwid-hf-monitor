@@ -17,3 +17,4 @@ export * from './adapters/notionAdapter.js';
 // Utils
 export * from './healthFactor.js';
 export * from './alerts.js';
+export * from './alertManager.js';

@@ -13,6 +13,7 @@ import {
   sendAlert,
   AppConfig
 } from './lib/index.js';
+import { AlertManager } from './lib/alertManager.js';
 
 // Import worker-specific utilities
 import { createEnv } from './config.js';
@@ -76,6 +77,9 @@ export default {
       // Step 2: Process loans and check health factors
       const alertsSent = [];
       const hf_results = [];
+      
+      // Initialize alert manager for cooldown handling
+      const alertManager = new AlertManager(env.HF_MONITOR_STATE);
 
       for (const loan of loansSnapshot) {
         const healthFactor = loan.healthFactor;
@@ -90,14 +94,28 @@ export default {
         // Check if health factor is below critical threshold
         if (healthFactor < validatedEnv.HF_CRIT) {
           logger.warn(`Critical health factor detected: ${loan.id}`, { healthFactor, assetSymbol, threshold: validatedEnv.HF_CRIT });
-          await sendAlert('critical', `🚨 CRITICAL: ${assetSymbol} loan has health factor ${healthFactor.toFixed(2)}`, validatedEnv);
-          alertsSent.push({ assetSymbol, id: loan.id, hf: healthFactor, level: 'critical' });
+          
+          // Check if we should send alert based on cooldown rules
+          if (await alertManager.shouldSendAlert(loan.id, 'critical', assetSymbol)) {
+            await sendAlert('critical', `🚨 CRITICAL: ${assetSymbol} loan has health factor ${healthFactor.toFixed(2)}`, validatedEnv);
+            await alertManager.recordAlert(loan.id, 'critical', assetSymbol);
+            alertsSent.push({ assetSymbol, id: loan.id, hf: healthFactor, level: 'critical' });
+          } else {
+            logger.info(`Critical alert suppressed due to cooldown: ${loan.id}`, { healthFactor, assetSymbol });
+          }
         } 
         // Check if health factor is below warning threshold
         else if (healthFactor < validatedEnv.HF_WARN) {
           logger.warn(`Warning health factor detected: ${loan.id}`, { healthFactor, assetSymbol, threshold: validatedEnv.HF_WARN });
-          await sendAlert('warning', `⚠️ WARNING: ${assetSymbol} loan has health factor ${healthFactor.toFixed(2)}`, validatedEnv);
-          alertsSent.push({ assetSymbol, id: loan.id, hf: healthFactor, level: 'warning' });
+          
+          // Check if we should send alert based on cooldown rules
+          if (await alertManager.shouldSendAlert(loan.id, 'warning', assetSymbol)) {
+            await sendAlert('warning', `⚠️ WARNING: ${assetSymbol} loan has health factor ${healthFactor.toFixed(2)}`, validatedEnv);
+            await alertManager.recordAlert(loan.id, 'warning', assetSymbol);
+            alertsSent.push({ assetSymbol, id: loan.id, hf: healthFactor, level: 'warning' });
+          } else {
+            logger.info(`Warning alert suppressed due to cooldown: ${loan.id}`, { healthFactor, assetSymbol });
+          }
         }
       }
 
